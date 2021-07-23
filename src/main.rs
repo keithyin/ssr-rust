@@ -4,8 +4,7 @@ use tokio::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use futures::stream::StreamExt;
 
-#[tokio::main]
-pub async fn main() -> io::Result<()> {
+async fn read_from_local() -> io::Result<()>{
     let listener = TcpListener::bind("127.0.0.1:8089").await?;
     loop {
         let (mut socket, _) = listener.accept().await?;
@@ -23,6 +22,22 @@ pub async fn main() -> io::Result<()> {
             writer.write("hello client".as_bytes()).await;
         });
     }
+    Ok(())
+}
+
+async fn send_msg_to_remote() -> io::Result<()> {
+    let mut stream = TcpStream::connect("47.241.7.128:80").await?;
+    println!("connected");
+    stream.write("hello boy".as_bytes()).await;
+    let mut buf = [0 as u8; 1024];
+    let n = stream.read(&mut buf).await?;
+    println!("{:?}", String::from_utf8_lossy(&buf[0..n]));
+    Ok(())
+}
+
+#[tokio::main]
+pub async fn main() -> io::Result<()> {
+    send_msg_to_remote().await?;
 
     Ok(())
 }
