@@ -47,7 +47,28 @@ impl Socks5 {
         res
     }
 
+    pub fn decrypt(data: &[u8]) -> Socks5 {
+        let addr_type = data[0];
+        let addr_len = data[1];
+        let addr = String::from_utf8_lossy(&data[2..((2+addr_len) as usize)]).to_string();
+        let port_high8 = data[2+addr_len as usize];
+        let port_low8 = data[3+addr_len as usize];
+        Socks5{
+            mode: 0,
+            addr_type,
+            addr,
+            port: ((port_high8 as u32) << 8) + (port_low8 as u32),
+            port_high8,
+            port_low8,
+            addr_len,
+        }
+    }
+
     pub fn get_addr(&self) -> String {
         self.addr.clone()
+    }
+
+    pub fn get_port(&self) -> u32 {
+        self.port
     }
 }

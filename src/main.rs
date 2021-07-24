@@ -1,5 +1,6 @@
 mod socks5;
-mod version1;
+mod proxy;
+mod remote;
 
 use tokio;
 use tokio::net::{TcpListener, TcpStream};
@@ -29,7 +30,6 @@ async fn read_from_local() -> io::Result<()>{
             // get the remote response to the local
             let reply =  [5, 0, 0, 1, 0, 0, 0, 0, 8, 174];
             proxy.write(&reply).await.unwrap();
-
            tokio::select! {
                _ = proxy.readable() => {
                    let mut buf = [0; 4096];
@@ -77,5 +77,5 @@ fn read_from_local_v2() {
 // }
 
 pub fn main() {
-    version1::proxy_server();
+    remote::remote_server();
 }
