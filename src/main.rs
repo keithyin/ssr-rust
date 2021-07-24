@@ -1,3 +1,6 @@
+mod socks5;
+mod version1;
+
 use tokio;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io;
@@ -5,21 +8,46 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use futures::stream::StreamExt;
 
 async fn read_from_local() -> io::Result<()>{
-    let listener = TcpListener::bind("127.0.0.1:8089").await?;
+    let listener = TcpListener::bind("127.0.0.1:1080").await?;
     loop {
-        let (mut socket, _) = listener.accept().await?;
+        let (mut proxy, _) = listener.accept().await?;
         tokio::spawn(async move {
-            let (mut reader, mut writer) = socket.split();
-            let mut buf = [0; 1024];
+            let mut buf = [0; 4096];
+            let mut n = proxy.read(&mut buf).await.unwrap();
+            // println!("first read:{:?}", &buf[0..n]);
+            proxy.write(&[5, 0]).await.unwrap();
+            n = proxy.read(&mut buf).await.unwrap();
+            // println!("second read:{:?}", &buf[0..n]);
+            let socks5_data = socks5::Socks5::new(&buf[0..n]);
+            // println!("{:?}", socks5_data);
 
-            loop {
-                let n = reader.read(&mut buf).await.unwrap();
-                println!("bytes:{}, data:{}", n, String::from_utf8_lossy(&buf[0..n]));
-                if n ==0 || buf[n-1] == '\0' as u8{
-                    break;
-                }
-            }
-            writer.write("hello client".as_bytes()).await;
+            // connect to ther server
+            let mut remote = TcpStream::connect("127.0.0.1:8086").await.unwrap();
+            remote.write(&socks5_data.encrypt()).await.unwrap();
+
+
+            // get the remote response to the local
+            let reply =  [5, 0, 0, 1, 0, 0, 0, 0, 8, 174];
+            proxy.write(&reply).await.unwrap();
+
+           tokio::select! {
+               _ = proxy.readable() => {
+                   let mut buf = [0; 4096];
+                   let mut n = proxy.read(&mut buf).await.unwrap();
+                   let write_n = remote.write(&buf[0..n]).await.unwrap();
+                   assert_eq!(write_n, n);
+                   println!("proxy read:{}, remote write:{}, {:?}", n, write_n, socks5_data.get_addr());
+
+               }
+               _ = remote.readable() => {
+                   let mut buf = [0; 4096];
+                   let mut n = remote.read(&mut buf).await.unwrap();
+                   let write_n = proxy.write(&buf[0..n]).await.unwrap();
+                   assert_eq!(write_n, n);
+                   println!("remote read:{}, proxy write:{}, {:?}", n, write_n, socks5_data.get_addr());
+               }
+           }
+
         });
     }
     Ok(())
@@ -35,9 +63,19 @@ async fn send_msg_to_remote() -> io::Result<()> {
     Ok(())
 }
 
-#[tokio::main]
-pub async fn main() -> io::Result<()> {
-    send_msg_to_remote().await?;
+fn read_from_local_v2() {
 
-    Ok(())
+}
+
+
+
+// #[tokio::main]
+// pub async fn main() -> io::Result<()> {
+//    read_from_local().await?;
+//
+//     Ok(())
+// }
+
+pub fn main() {
+    version1::proxy_server();
 }

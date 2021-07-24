@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 futures = "0.3"
 tokio = {version="1", features=["full"]}
+mio = {version="0.7", features= ["os-poll", "net"]}
