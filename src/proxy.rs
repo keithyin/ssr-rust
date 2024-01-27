@@ -193,7 +193,7 @@ pub fn proxy_server_v3() {
     let mut thread_pool = vec![];
     loop {
         let (mut proxy, _) = listener.accept().unwrap();
-        let mut buf = [0; 4096];
+        let mut buf = [0; 40960];
 
         let mut n = proxy.read(&mut buf).unwrap();
 
@@ -201,13 +201,13 @@ pub fn proxy_server_v3() {
         n = proxy.read(&mut buf).unwrap();
 
         let socks5_data = socks5::Socks5::new(&buf[0..n]);
-        // println!("{:?}", socks5_data);
+        
+        println!("connect to {}", socks5_data.get_addr());
 
-        // connect to ther server
+        // connect to the server
         let addr: SocketAddr  = "127.0.0.1:8086".parse().unwrap();
         let mut remote = std::net::TcpStream::connect(addr).unwrap();
         remote.write_all(&socks5_data.encrypt()).unwrap();
-
 
         // get the remote response to the local
         let reply =  [5, 0, 0, 1, 0, 0, 0, 0, 8, 174];
@@ -221,12 +221,12 @@ pub fn proxy_server_v3() {
                 match proxy.read(&mut buf) {
                     Ok(n) => {
                         remote.write_all(&buf[0..n])?;
-                        println!("PROXY: send data to remote");
                     },
                     Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
 
                     },
                     _ => {
+                        println!("realease thread");
                         break;
                     }
                 }
@@ -235,16 +235,15 @@ pub fn proxy_server_v3() {
                 match remote.read(&mut buf) {
                     Ok(n) => {
                         proxy.write_all(&buf[0..n]).unwrap();
-                        println!("PROXY: send data to local");
                     },
                     Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
 
                     },
                     _ => {
+                        println!("release thread");
                         break;
                     }
                 }
-                thread::sleep(Duration::from_millis(10));
             }
             Ok(())
         });

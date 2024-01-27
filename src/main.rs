@@ -7,6 +7,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use futures::stream::StreamExt;
+use std::env;
 
 async fn read_from_local() -> io::Result<()>{
     let listener = TcpListener::bind("127.0.0.1:1080").await?;
@@ -80,5 +81,13 @@ fn read_from_local_v2() {
 /// 文中的 client 可以理解就是 浏览器
 /// 文中的 server 对于ssr，包括两部分，一个是 本地的 server + 远程的 server。
 pub fn main() {
-    remote::remote_server();
+    let args = env::args().collect::<Vec<String>>();
+    let mode = args[1].clone();
+
+    match mode.as_str() {
+        "proxy" => proxy::proxy_server_v3(),
+        "server" => remote::remote_server(),
+        _ => panic!("invalid args {}", mode.as_str()),
+
+    }
 }

@@ -64,8 +64,8 @@ impl Socks5 {
         }
     }
 
-    pub fn get_addr(&self) -> String {
-        self.addr.clone()
+    pub fn get_addr(&self) -> &String {
+        &self.addr
     }
 
     pub fn get_port(&self) -> u32 {
