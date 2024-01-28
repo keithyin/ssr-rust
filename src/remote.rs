@@ -12,13 +12,13 @@ pub fn remote_server() {
     loop {
         let (mut proxy_remote, _) = listener.accept().unwrap();
         let mut buf = [0;40960];
-        let mut n = proxy_remote.read(&mut buf).unwrap();
+        let n = proxy_remote.read(&mut buf).unwrap();
 
         let sock5 = Socks5::decrypt(&buf[0..n]);
 
         println!("connected to {}:{}", sock5.get_addr(), sock5.get_port());
 
-        let t = thread::spawn(move || -> io::Result<()>{
+        let _ = thread::spawn(move || -> io::Result<()>{
             let mut dest = std::net::TcpStream::connect(format!("{}:{}", sock5.get_addr(), sock5.get_port())).unwrap();
 
             let mut buf = [0; 4096];

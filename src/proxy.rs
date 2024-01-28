@@ -14,11 +14,13 @@ use std::collections::HashMap;
 use tokio::io::AsyncReadExt;
 use std::time::Duration;
 
+#[allow(unused)]
 struct Scheduler {
     // (proxy, remote)
     pairs: Arc<Mutex<Vec<(TcpStream, TcpStream)>>>,
 }
 
+#[allow(unused)]
 impl Scheduler {
 
     pub fn new() -> Self {
@@ -59,6 +61,8 @@ pub fn next_token(token: &Token) -> Token {
     Token(token.0 + 1)
 }
 
+
+#[allow(unused)]
 pub fn proxy_server() {
     let addr: SocketAddr  = "127.0.0.1:1080".parse().unwrap();
     let mut listener = TcpListener::bind(addr).unwrap();
@@ -125,7 +129,7 @@ pub fn proxy_server() {
     }
 }
 
-
+#[allow(unused)]
 pub fn proxy_server_v2() {
     let addr: SocketAddr  = "127.0.0.1:1080".parse().unwrap();
     let mut listener = TcpListener::bind(addr).unwrap();
