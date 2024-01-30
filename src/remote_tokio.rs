@@ -1,9 +1,7 @@
 use std;
 use std::net::SocketAddr;
-use std::io::{Read, Write};
 use crate::socks5::Socks5;
-use std::{thread, io};
-use std::time::Duration;
+use std::io;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
@@ -28,10 +26,9 @@ pub async fn remote_server() -> io::Result<()>{
                 tokio::select! {
                     res = proxy_remote.read(&mut proxy_buffer) => {
                         match res {
+                            Ok(0) => break,
                             Ok(n) => {
-                                if n > 0 {
-                                    dest.write_all(&proxy_buffer[0..n]).await?;
-                                }
+                                dest.write_all(&proxy_buffer[0..n]).await?;
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
                                 panic!("this should not happen")
@@ -47,10 +44,9 @@ pub async fn remote_server() -> io::Result<()>{
 
                     res = dest.read(&mut dest_buffer) => {
                         match res {
+                            Ok(0) => break,
                             Ok(n) => {
-                                if n > 0 {
-                                    proxy_remote.write_all(&dest_buffer[0..n]).await?;
-                                }
+                                proxy_remote.write_all(&dest_buffer[0..n]).await?;
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
                                 panic!("this should not happen")

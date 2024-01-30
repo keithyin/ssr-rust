@@ -8,7 +8,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
 /// this works.
-pub async fn proxy_server_v3() -> io::Result<()>{
+pub async fn proxy_server() -> io::Result<()>{
     let addr: SocketAddr  = "127.0.0.1:1080".parse().unwrap();
     let listener = TcpListener::bind(addr).await?;
     loop {
@@ -43,10 +43,10 @@ pub async fn proxy_server_v3() -> io::Result<()>{
                 tokio::select! {
                     res = proxy.read(&mut proxy_buf) => {
                         match res {
+                            Ok(0) => break,
                             Ok(n) => {
-                                if n > 0 {
-                                    remote.write_all(&proxy_buf[0..n]).await?;
-                                }
+                                remote.write_all(&proxy_buf[0..n]).await?;
+                                
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
                                 panic!("this should not happen")
@@ -60,10 +60,9 @@ pub async fn proxy_server_v3() -> io::Result<()>{
 
                     res = remote.read(&mut remote_buf) => {
                         match res {
+                            Ok(0) => break,
                             Ok(n) => {
-                                if n > 0 {
-                                    proxy.write_all(&remote_buf[0..n]).await?;
-                                }
+                                proxy.write_all(&remote_buf[0..n]).await?;
 
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
