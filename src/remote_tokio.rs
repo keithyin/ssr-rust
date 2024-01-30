@@ -10,9 +10,9 @@ pub async fn remote_server() -> io::Result<()>{
     let addr: SocketAddr  = "127.0.0.1:8086".parse().unwrap();
     let listener = TcpListener::bind(addr).await?;
     loop {
-        let (mut proxy_remote, _) = listener.accept().await?;
+        let (mut proxy, _) = listener.accept().await?;
         let mut buf = [0;40960];
-        let n = proxy_remote.read(&mut buf).await?;
+        let n = proxy.read(&mut buf).await?;
 
         let sock5 = Socks5::decrypt(&buf[0..n]);
         println!("connected to {}:{}", sock5.get_addr(), sock5.get_port());
@@ -24,7 +24,7 @@ pub async fn remote_server() -> io::Result<()>{
             let mut proxy_buffer = [0_u8; 4096];
             loop {
                 tokio::select! {
-                    res = proxy_remote.read(&mut proxy_buffer) => {
+                    res = proxy.read(&mut proxy_buffer) => {
                         match res {
                             Ok(0) => break,
                             Ok(n) => {
@@ -46,7 +46,7 @@ pub async fn remote_server() -> io::Result<()>{
                         match res {
                             Ok(0) => break,
                             Ok(n) => {
-                                proxy_remote.write_all(&dest_buffer[0..n]).await?;
+                                proxy.write_all(&dest_buffer[0..n]).await?;
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
                                 panic!("this should not happen")
