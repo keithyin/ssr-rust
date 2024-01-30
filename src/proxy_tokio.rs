@@ -12,13 +12,13 @@ pub async fn proxy_server() -> io::Result<()>{
     let addr: SocketAddr  = "127.0.0.1:1080".parse().unwrap();
     let listener = TcpListener::bind(addr).await?;
     loop {
-        let (mut proxy, _) = listener.accept().await?;
+        let (mut switchy_omega, _) = listener.accept().await?;
         let mut buf = [0; 40960];
 
-        let mut n = proxy.read(&mut buf).await?;
+        let mut n = switchy_omega.read(&mut buf).await?;
         
-        proxy.write_all(&[5, 0]).await?;
-        n = proxy.read(&mut buf).await?;
+        switchy_omega.write_all(&[5, 0]).await?;
+        n = switchy_omega.read(&mut buf).await?;
         if n < 4 {
             continue;
         }
@@ -34,14 +34,14 @@ pub async fn proxy_server() -> io::Result<()>{
             remote.write_all(&socks5_data.encrypt()).await?;
 
             let reply =  [5, 0, 0, 1, 0, 0, 0, 0, 8, 174];
-            proxy.write_all(&reply).await?;
+            switchy_omega.write_all(&reply).await?;
             
             let mut proxy_buf = [0_u8; 4096];
             let mut remote_buf = [0_u8; 4086];
 
             loop {
                 tokio::select! {
-                    res = proxy.read(&mut proxy_buf) => {
+                    res = switchy_omega.read(&mut proxy_buf) => {
                         match res {
                             Ok(0) => break,
                             Ok(n) => {
@@ -62,7 +62,7 @@ pub async fn proxy_server() -> io::Result<()>{
                         match res {
                             Ok(0) => break,
                             Ok(n) => {
-                                proxy.write_all(&remote_buf[0..n]).await?;
+                                switchy_omega.write_all(&remote_buf[0..n]).await?;
 
                             },
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock  => {
