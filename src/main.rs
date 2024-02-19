@@ -5,6 +5,7 @@ mod proxy_tokio;
 mod remote_tokio;
 
 use tokio;
+use tracing_subscriber;
 use std::env;
 
 
@@ -12,6 +13,7 @@ use std::env;
 /// 文中的 client 可以理解就是 浏览器
 /// 文中的 server 对于ssr，包括两部分，一个是 本地的 server + 远程的 server。
 pub fn main() {
+    tracing_subscriber::fmt::init();
 
     let args = env::args().collect::<Vec<String>>();
     let tag = args[1].clone();

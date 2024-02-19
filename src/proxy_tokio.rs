@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tracing::{event, Level};
 
 /// this works.
 pub async fn proxy_server() -> io::Result<()>{
@@ -24,7 +25,7 @@ pub async fn proxy_server() -> io::Result<()>{
         }
         let socks5_data = socks5::Socks5::new(&buf[0..n]);
         
-        println!("connect to {}:{}", socks5_data.get_addr(), socks5_data.get_port());
+        event!(Level::INFO, "connect to {}:{}", socks5_data.get_addr(), socks5_data.get_port());
 
         tokio::spawn(async move {
             let talk_addr = socks5_data.get_addr().to_string();

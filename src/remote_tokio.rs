@@ -4,6 +4,7 @@ use crate::socks5::Socks5;
 use std::io;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tracing::{event, Level};
 
 /// 接收 proxy 的请求，执行指针的 http 请求
 pub async fn remote_server() -> io::Result<()>{
@@ -15,7 +16,8 @@ pub async fn remote_server() -> io::Result<()>{
         let n = proxy.read(&mut buf).await?;
 
         let sock5 = Socks5::decrypt(&buf[0..n]);
-        println!("connected to {}:{}", sock5.get_addr(), sock5.get_port());
+
+        event!(Level::INFO, "connect to {}:{}", sock5.get_addr(), sock5.get_port());
 
         tokio::spawn(async move {
             let talk_addr = format!("connected to {}:{}", sock5.get_addr(), sock5.get_port());
